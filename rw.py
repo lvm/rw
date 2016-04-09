@@ -36,7 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 __author__ = 'Mauro'
-__version__ = '0.0.1'
+__version__ = '0.0.23'
 __license__ = 'BSD3'
 
 
@@ -61,7 +61,8 @@ MAX = "--bg-max"
 SCALE = "--bg-scale"
 TILE = "--bg-tile"
 
-LOCKFILE = os.path.join(tempfile.gettempdir(), "rw.lock")
+LOCKFILE = os.path.join(tempfile.gettempdir(),
+                        "rw-{}.lock".format(os.getuid()))
 
 
 def fy_random(src, just_one):
