@@ -42,12 +42,17 @@ __license__ = 'BSD3'
 
 import os
 import re
+import sys
 import glob
 import time
+import fcntl
 import random
 import argparse
+import tempfile
 import subprocess as sp
 
+
+__file = os.path.basename(__file__)
 
 NOXINE = "--no-xinerama"
 CENTER = "--bg-center"
@@ -55,6 +60,8 @@ FILL = "--bg-fill"
 MAX = "--bg-max"
 SCALE = "--bg-scale"
 TILE = "--bg-tile"
+
+LOCKFILE = os.path.join(tempfile.gettempdir(), "rw.lock")
 
 
 def fy_random(src, just_one):
@@ -117,6 +124,18 @@ def run_feh(time_interval, feh_flags):
     run_feh(time_interval, feh_flags)
 
 
+def lock():
+    lck = open(LOCKFILE, 'w')
+    fcntl.flock(lck, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+    return lck
+
+
+def release(lck):
+    fcntl.flock(lck, fcntl.LOCK_UN)
+    os.remove(LOCKFILE)
+
+
 if __name__ == '__main__':
         parser = argparse.ArgumentParser()
         parser.add_argument('-bg', '--background',
@@ -172,6 +191,7 @@ if __name__ == '__main__':
 
         feh_flags = []
         bg_source = None
+        lck = None
 
         if args.background:
             if args.center:
@@ -196,7 +216,14 @@ if __name__ == '__main__':
                 bg_source = args.image
 
             if bg_source:
-                run_feh(args.time_interval or "1h", [feh_flags, bg_source])
-
+                try:
+                    lck = lock()
+                    run_feh(args.time_interval or "1h", [feh_flags, bg_source])
+                except IOError as e:
+                    print "{} is already running!".format(__file)
+                    sys.exit(1)
+                finally:
+                    if lck:
+                        release(lck)
         else:
-            print "{} -h".format(__file__)
+            print "{} -h".format(__file)
